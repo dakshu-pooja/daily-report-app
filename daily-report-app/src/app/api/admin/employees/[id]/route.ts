@@ -4,19 +4,21 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
 // DELETE — delete employee by id
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
     const session = await auth()
     if (!session || session.user.role !== 'ADMIN') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    await prisma.user.delete({ where: { id: params.id } })
+    await prisma.user.delete({ where: { id } })
     return NextResponse.json({ success: true })
 }
 
 // PATCH — update employee (DOB, password)
-export async function PATCH(req: Request, { params }: { params: { id: string } }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
     try {
-        console.log(`PATCH /api/admin/employees/${params.id} - REQUEST RECEIVED`)
+        console.log(`PATCH /api/admin/employees/${id} - REQUEST RECEIVED`)
         const session = await auth()
         console.log('PATCH Session (no-args):', JSON.stringify(session, null, 2))
 
@@ -37,7 +39,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
             }
         }
         const body = await req.json()
-        console.log(`PATCH /api/admin/employees/${params.id} received:`, body)
+        console.log(`PATCH /api/admin/employees/${id} received:`, body)
         const updateData: any = {}
 
         if (body.dateOfBirth !== undefined) updateData.dateOfBirth = body.dateOfBirth || null
@@ -48,7 +50,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         console.log('Final Update Data:', updateData)
 
         const updated = await prisma.user.update({
-            where: { id: params.id },
+            where: { id },
             data: updateData,
             select: { id: true, name: true, email: true, dateOfBirth: true, isActive: true, employeeId: true },
         })

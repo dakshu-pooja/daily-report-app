@@ -4,15 +4,16 @@ import { prisma } from '@/lib/prisma'
 
 export async function PUT(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params
     const session = await auth()
     if (!session?.user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     try {
-        const report = await prisma.report.findUnique({ where: { id: params.id } })
+        const report = await prisma.report.findUnique({ where: { id } })
         if (!report) {
             return NextResponse.json({ error: 'Report not found' }, { status: 404 })
         }
@@ -35,7 +36,7 @@ export async function PUT(
         const { morningReport, afternoonReport, dailySummary, remarks } = body
 
         const updated = await prisma.report.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 morningReport,
                 afternoonReport,
